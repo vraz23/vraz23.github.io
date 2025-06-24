@@ -129,10 +129,28 @@
     <p style="margin: 0; font-size: 12px; color: #856404;">
         <strong>Admin Mode:</strong> IP tracking active | 
         <span id="uniqueIPCount">Unique IPs: 0</span> | 
-        <button onclick="downloadVisitorCSV()" style="background: #007bff; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px;">
-            📊 Download CSV
-        </button>
+        <span id="totalVisitsCount">Total Visits: 0</span>
     </p>
+    <div style="margin-top: 8px;">
+        <button onclick="downloadVisitorCSV()" style="background: #007bff; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; margin-right: 5px;">
+            📊 Download IPs CSV
+        </button>
+        <button onclick="downloadVisitorCountCSV()" style="background: #17a2b8; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px;">
+            📈 Download Visits CSV
+        </button>
+    </div>
+    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffeaa7;">
+        <p style="margin: 0 0 5px 0; font-size: 11px; color: #856404;">
+            <strong>Test Mode:</strong> 
+            <input type="text" id="testIP" placeholder="Enter test IP" style="font-size: 10px; padding: 2px 4px; width: 120px;">
+            <button onclick="addTestIP()" style="background: #28a745; color: white; border: none; padding: 2px 6px; border-radius: 2px; cursor: pointer; font-size: 10px;">
+                Add Test IP
+            </button>
+            <button onclick="clearAllData()" style="background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 2px; cursor: pointer; font-size: 10px;">
+                Clear All
+            </button>
+        </p>
+    </div>
 </div>
 </div>
 
@@ -141,12 +159,14 @@
 if (window.location.search.includes('admin=true')) {
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('adminPanel').style.display = 'block';
-        updateUniqueIPCount();
+        updateUniqueIPCountFromCSV();
+        updateTotalVisitsCount();
     });
 }
 
 // Function to update unique IP count in admin panel
 function updateUniqueIPCount() {
+    // Use localStorage data first (backward compatibility)
     const visitorData = JSON.parse(localStorage.getItem('visitorTrackingData') || '[]');
     const uniqueIPs = [...new Set(visitorData.map(visitor => visitor.ip))];
     const countElement = document.getElementById('uniqueIPCount');
@@ -154,31 +174,170 @@ function updateUniqueIPCount() {
         countElement.textContent = `Unique IPs: ${uniqueIPs.length}`;
     }
 }
+
+// Function to update total visits count from CSV data
+async function updateTotalVisitsCount() {
+    try {
+        // Try localStorage first (most recent data)
+        const localData = JSON.parse(localStorage.getItem('csvVisitorCountData') || '[]');
+        let visitorData = localData;
+        
+        // If no local data, try reading CSV file
+        if (visitorData.length === 0) {
+            visitorData = await readVisitorCSVFile();
+        }
+        
+        const countElement = document.getElementById('totalVisitsCount');
+        if (countElement) {
+            countElement.textContent = `Total Visits: ${visitorData.length}`;
+        }
+    } catch (error) {
+        console.log('Error updating total visits count:', error.message);
+        const countElement = document.getElementById('totalVisitsCount');
+        if (countElement) {
+            countElement.textContent = 'Total Visits: 0';
+        }
+    }
+}
+
+// Function to download visitor count CSV
+function downloadVisitorCountCSV() {
+    // Try to get data from localStorage first (most recent)
+    const localData = JSON.parse(localStorage.getItem('csvVisitorCountData') || '[]');
+    
+    if (localData.length > 0) {
+        generateVisitorCSVDownload(localData);
+    } else {
+        // Fallback to reading the CSV file
+        readVisitorCSVFile().then(data => {
+            if (data.length === 0) {
+                alert('No visitor count data available');
+                return;
+            }
+            generateVisitorCSVDownload(data);
+        });
+    }
+}
+
+// Function to generate visitor CSV download
+function generateVisitorCSVDownload(visitorData) {
+    if (visitorData.length === 0) {
+        alert('No visitor count data available');
+        return;
+    }
+    
+    // Create CSV header
+    const csvHeader = 'Timestamp,Date,Time,Hour,Minute,Second,Visit_Count,User_Agent,Page_URL\n';
+    
+    // Create CSV rows
+    const csvRows = visitorData.map(visitor => {
+        return [
+            visitor.timestamp,
+            visitor.date,
+            visitor.time,
+            visitor.hour,
+            visitor.minute,
+            visitor.second,
+            visitor.visitCount,
+            `"${visitor.userAgent}"`, // Wrap in quotes for CSV
+            visitor.pageUrl
+        ].join(',');
+    }).join('\n');
+    
+    // Combine header and rows
+    const csvContent = csvHeader + csvRows;
+    
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `visitors_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+async function updateUniqueIPCountFromCSV() {
+    try {
+        // Try localStorage first (most recent data)
+        const localData = JSON.parse(localStorage.getItem('csvVisitorData') || '[]');
+        let visitorData = localData;
+        
+        // If no local data, try reading CSV file
+        if (visitorData.length === 0) {
+            visitorData = await readCSVFile();
+        }
+        
+        const uniqueIPs = [...new Set(visitorData.map(visitor => visitor.ip))];
+        const countElement = document.getElementById('uniqueIPCount');
+        if (countElement) {
+            countElement.textContent = `Unique IPs: ${uniqueIPs.length} (CSV)`;
+        }
+    } catch (error) {
+        console.log('Error updating IP count from CSV:', error.message);
+        // Fallback to old method
+        updateUniqueIPCount();
+    }
+}
 </script>
 
 </div>
 
 <script>
-// Simple visitor counter using localStorage
-function updateVisitorCount() {
-    // Get current count from localStorage
-    let visits = localStorage.getItem('jkCampaignVisits');
-    
-    // If no visits recorded, start at 0
-    if (visits === null) {
-        visits = 0;
-    } else {
-        visits = parseInt(visits);
+// Simple visitor counter using CSV file
+async function updateVisitorCount() {
+    try {
+        // Get current timestamp and detailed time info
+        const now = new Date();
+        const timestamp = now.toISOString();
+        const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+        const time = now.toTimeString().split(' ')[0]; // HH:MM:SS
+        const hour = now.getHours().toString().padStart(2, '0');
+        const minute = now.getMinutes().toString().padStart(2, '0');
+        const second = now.getSeconds().toString().padStart(2, '0');
+        
+        // Read existing visitor data
+        const existingVisitors = await readVisitorCSVFile();
+        
+        // Calculate new visit count
+        const visitCount = existingVisitors.length + 1;
+        
+        // Create new visitor entry
+        const visitorEntry = {
+            timestamp: timestamp,
+            date: date,
+            time: time,
+            hour: hour,
+            minute: minute,
+            second: second,
+            visitCount: visitCount,
+            userAgent: navigator.userAgent,
+            pageUrl: window.location.href
+        };
+        
+        // Append to visitors CSV
+        await appendToVisitorCSVFile(visitorEntry);
+        
+        // Display the count
+        document.getElementById('visitorCount').textContent = visitCount.toLocaleString();
+        
+        console.log('Visitor count updated:', visitorEntry);
+        
+    } catch (error) {
+        console.log('Error updating visitor count:', error.message);
+        
+        // Fallback to localStorage method
+        let visits = localStorage.getItem('jkCampaignVisits');
+        if (visits === null) {
+            visits = 0;
+        } else {
+            visits = parseInt(visits);
+        }
+        visits++;
+        localStorage.setItem('jkCampaignVisits', visits);
+        document.getElementById('visitorCount').textContent = visits.toLocaleString();
     }
-    
-    // Increment visit count
-    visits++;
-    
-    // Store updated count
-    localStorage.setItem('jkCampaignVisits', visits);
-    
-    // Display the count
-    document.getElementById('visitorCount').textContent = visits.toLocaleString();
 }
 
 // IP Geolocation tracking function
@@ -189,15 +348,21 @@ async function trackVisitorIP() {
         const data = await response.json();
         
         if (data.ip) {
-            // Check if this specific IP was already tracked recently (within last hour to avoid spam)
-            const visitorData = JSON.parse(localStorage.getItem('visitorTrackingData') || '[]');
-            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-            const recentSameIP = visitorData.find(visitor => 
-                visitor.ip === data.ip && new Date(visitor.timestamp) > oneHourAgo
+            // Read existing CSV data
+            const existingData = await readCSVFile();
+            
+            // Check if this specific IP was already tracked recently (within last 10 minutes)
+            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+            const recentSameIP = existingData.find(visitor => 
+                visitor.ip === data.ip && new Date(visitor.timestamp) > tenMinutesAgo
             );
             
             if (recentSameIP) {
-                console.log('Same IP tracked within last hour, skipping to avoid spam');
+                console.log('Same IP tracked within last 10 minutes, skipping to avoid spam');
+                // Still update the IP count display even if not tracking
+                if (window.location.search.includes('admin=true')) {
+                    updateUniqueIPCountFromCSV();
+                }
                 return;
             }
             
@@ -213,28 +378,18 @@ async function trackVisitorIP() {
                 isp: data.org || 'Unknown',
                 userAgent: navigator.userAgent,
                 referrer: document.referrer || 'Direct',
-                pageUrl: window.location.href
+                pageUrl: window.location.href,
+                sessionId: generateSessionId()
             };
             
-            // Store visitor info in localStorage
-            let updatedVisitorData = [...visitorData, visitorInfo];
+            // Append to CSV file
+            await appendToCSVFile(visitorInfo);
             
-            // Keep only last 200 entries to prevent localStorage overflow
-            if (updatedVisitorData.length > 200) {
-                updatedVisitorData = updatedVisitorData.slice(-200);
-            }
-              localStorage.setItem('visitorTrackingData', JSON.stringify(updatedVisitorData));
-            
-            console.log('New visitor tracked:', visitorInfo);
-            
-            // Update unique IP count if admin panel is visible
+            console.log('New visitor tracked to CSV:', visitorInfo);
+              // Update unique IP count if admin panel is visible
             if (window.location.search.includes('admin=true')) {
-                updateUniqueIPCount();
-            }
-            
-            // Auto-generate CSV file for admin (only in development/admin mode)
-            if (window.location.search.includes('admin=true')) {
-                generateCSVDownload();
+                updateUniqueIPCountFromCSV();
+                updateTotalVisitsCount();
             }
         }
     } catch (error) {
@@ -242,17 +397,200 @@ async function trackVisitorIP() {
     }
 }
 
+// Generate a unique session ID for each visit
+function generateSessionId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// Function to read visitor CSV file
+async function readVisitorCSVFile() {
+    try {
+        const response = await fetch('./visitors.csv?' + Date.now()); // Cache bust
+        if (!response.ok) {
+            console.log('Visitor CSV file not found, starting fresh');
+            return [];
+        }
+        const csvText = await response.text();
+        return parseVisitorCSVData(csvText);
+    } catch (error) {
+        console.log('Error reading visitor CSV file:', error.message);
+        return [];
+    }
+}
+
+// Function to parse visitor CSV data
+function parseVisitorCSVData(csvText) {
+    const lines = csvText.trim().split('\n');
+    if (lines.length <= 1) return []; // Only header or empty
+    
+    const data = [];
+    for (let i = 1; i < lines.length; i++) { // Skip header
+        const line = lines[i].trim();
+        if (line) {
+            const parts = parseCSVLine(line);
+            if (parts.length >= 8) {
+                data.push({
+                    timestamp: parts[0],
+                    date: parts[1],
+                    time: parts[2],
+                    hour: parts[3],
+                    minute: parts[4],
+                    second: parts[5],
+                    visitCount: parseInt(parts[6]) || 0,
+                    userAgent: parts[7].replace(/^"|"$/g, ''), // Remove quotes
+                    pageUrl: parts[8] || ''
+                });
+            }
+        }
+    }
+    return data;
+}
+
+// Function to append visitor data to CSV file (client-side simulation)
+async function appendToVisitorCSVFile(visitorEntry) {
+    try {
+        // Read existing data
+        const existingData = await readVisitorCSVFile();
+        
+        // Add new visitor
+        existingData.push(visitorEntry);
+        
+        // Store in localStorage as fallback and for immediate use
+        localStorage.setItem('csvVisitorCountData', JSON.stringify(existingData));
+        
+        console.log('Visitor data added to local storage (CSV simulation)');
+        
+        return true;
+    } catch (error) {
+        console.log('Error appending to visitor CSV:', error.message);
+        return false;
+    }
+}
+async function readCSVFile() {
+    try {
+        const response = await fetch('./ips.csv?' + Date.now()); // Cache bust
+        if (!response.ok) {
+            console.log('CSV file not found, starting fresh');
+            return [];
+        }
+        const csvText = await response.text();
+        return parseCSVData(csvText);
+    } catch (error) {
+        console.log('Error reading CSV file:', error.message);
+        return [];
+    }
+}
+
+// Function to parse CSV data
+function parseCSVData(csvText) {
+    const lines = csvText.trim().split('\n');
+    if (lines.length <= 1) return []; // Only header or empty
+    
+    const data = [];
+    for (let i = 1; i < lines.length; i++) { // Skip header
+        const line = lines[i].trim();
+        if (line) {
+            const parts = parseCSVLine(line);
+            if (parts.length >= 11) {
+                data.push({
+                    timestamp: parts[0],
+                    ip: parts[1],
+                    city: parts[2],
+                    region: parts[3],
+                    country: parts[4],
+                    countryCode: parts[5],
+                    timezone: parts[6],
+                    isp: parts[7],
+                    userAgent: parts[8].replace(/^"|"$/g, ''), // Remove quotes
+                    referrer: parts[9],
+                    pageUrl: parts[10],
+                    sessionId: parts[11] || 'N/A'
+                });
+            }
+        }
+    }
+    return data;
+}
+
+// Simple CSV line parser that handles quoted fields
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    
+    result.push(current); // Add the last field
+    return result;
+}
+
+// Function to append data to CSV file (client-side simulation)
+async function appendToCSVFile(visitorInfo) {
+    try {
+        // Read existing data
+        const existingData = await readCSVFile();
+        
+        // Add new visitor
+        existingData.push(visitorInfo);
+        
+        // Store in localStorage as fallback and for immediate use
+        localStorage.setItem('csvVisitorData', JSON.stringify(existingData));
+        
+        // In a real implementation, you would send this to a server endpoint
+        // For now, we'll simulate by downloading the updated CSV
+        console.log('Visitor data added to local storage (CSV simulation)');
+        
+        // Auto-download updated CSV in admin mode
+        if (window.location.search.includes('admin=true')) {
+            generateCSVDownloadFromData(existingData);
+        }
+        
+        return true;
+    } catch (error) {
+        console.log('Error appending to CSV:', error.message);
+        return false;
+    }
+}
+
 // Function to generate and download CSV file
 function generateCSVDownload() {
-    const visitorData = JSON.parse(localStorage.getItem('visitorTrackingData') || '[]');
+    // Try to get data from localStorage first (most recent)
+    const localData = JSON.parse(localStorage.getItem('csvVisitorData') || '[]');
     
+    if (localData.length > 0) {
+        generateCSVDownloadFromData(localData);
+    } else {
+        // Fallback to reading the CSV file
+        readCSVFile().then(data => {
+            if (data.length === 0) {
+                alert('No visitor data available');
+                return;
+            }
+            generateCSVDownloadFromData(data);
+        });
+    }
+}
+
+// Function to generate CSV download from data array
+function generateCSVDownloadFromData(visitorData) {
     if (visitorData.length === 0) {
         alert('No visitor data available');
         return;
     }
     
     // Create CSV header
-    const csvHeader = 'Timestamp,IP Address,City,Region,Country,Country Code,Timezone,ISP,User Agent,Referrer,Page URL\n';
+    const csvHeader = 'Timestamp,IP Address,City,Region,Country,Country Code,Timezone,ISP,User Agent,Referrer,Page URL,Session ID\n';
     
     // Create CSV rows
     const csvRows = visitorData.map(visitor => {
@@ -267,7 +605,8 @@ function generateCSVDownload() {
             visitor.isp,
             `"${visitor.userAgent}"`, // Wrap in quotes for CSV
             visitor.referrer,
-            visitor.pageUrl
+            visitor.pageUrl,
+            visitor.sessionId || 'N/A'
         ].join(',');
     }).join('\n');
     
@@ -279,7 +618,7 @@ function generateCSVDownload() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `touserip_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `ips_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -288,6 +627,54 @@ function generateCSVDownload() {
 
 // Admin function to manually download CSV (call in browser console or add admin=true to URL)
 window.downloadVisitorCSV = generateCSVDownload;
+
+// Test function to add a test IP manually
+async function addTestIP() {
+    const testIP = document.getElementById('testIP').value.trim();
+    if (!testIP) {
+        alert('Please enter a test IP address');
+        return;
+    }
+    
+    // Create a test visitor entry
+    const testVisitorInfo = {
+        timestamp: new Date().toISOString(),
+        ip: testIP,
+        city: 'Test City',
+        region: 'Test Region', 
+        country: 'Test Country',
+        countryCode: 'TC',
+        timezone: 'Test/Timezone',
+        isp: 'Test ISP',
+        userAgent: 'Test Browser - ' + navigator.userAgent.split(' ')[0],
+        referrer: 'Manual Test Entry',
+        pageUrl: window.location.href,
+        sessionId: generateSessionId()
+    };
+    
+    // Add to CSV data
+    await appendToCSVFile(testVisitorInfo);
+    
+    // Update display
+    updateUniqueIPCountFromCSV();
+    document.getElementById('testIP').value = '';
+    
+    console.log('Test IP added to CSV:', testVisitorInfo);
+    alert(`Test IP ${testIP} added successfully to CSV!`);
+}
+
+// Function to clear all visitor data
+function clearAllData() {
+    if (confirm('Are you sure you want to clear all visitor and IP data?')) {
+        localStorage.removeItem('csvVisitorData'); // IP data
+        localStorage.removeItem('csvVisitorCountData'); // Visitor count data
+        localStorage.removeItem('visitorTrackingData'); // Clear old data too
+        localStorage.removeItem('jkCampaignVisits'); // Clear old visit count
+        updateUniqueIPCountFromCSV();
+        updateTotalVisitsCount();
+        alert('All visitor data cleared!');
+    }
+}
 
 // Update counter and track IP when page loads
 document.addEventListener('DOMContentLoaded', function() {
