@@ -159,9 +159,41 @@
 if (window.location.search.includes('admin=true')) {
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('adminPanel').style.display = 'block';
-        updateUniqueIPCountFromCSV();
-        updateTotalVisitsCount();
+        updateUniqueIPCountFromSharedData();
+        updateTotalVisitsFromSharedData();
     });
+}
+
+// Function to update unique IP count from shared data
+function updateUniqueIPCountFromSharedData() {
+    try {
+        const ipData = JSON.parse(localStorage.getItem('jkCampaignIPData') || '[]');
+        const uniqueIPs = [...new Set(ipData.map(visitor => visitor.ip))];
+        const countElement = document.getElementById('uniqueIPCount');
+        if (countElement) {
+            countElement.textContent = `Unique IPs: ${uniqueIPs.length}`;
+        }
+    } catch (error) {
+        console.log('Error updating IP count:', error.message);
+        updateUniqueIPCount(); // Fallback to old method
+    }
+}
+
+// Function to update total visits from shared data
+function updateTotalVisitsFromSharedData() {
+    try {
+        const sharedData = JSON.parse(localStorage.getItem('jkCampaignSharedData') || '{"visits": []}');
+        const countElement = document.getElementById('totalVisitsCount');
+        if (countElement) {
+            countElement.textContent = `Total Visits: ${sharedData.visits.length}`;
+        }
+    } catch (error) {
+        console.log('Error updating total visits count:', error.message);
+        const countElement = document.getElementById('totalVisitsCount');
+        if (countElement) {
+            countElement.textContent = 'Total Visits: 0';
+        }
+    }
 }
 
 // Function to update unique IP count in admin panel
@@ -202,22 +234,27 @@ async function updateTotalVisitsCount() {
 
 // Function to download visitor count CSV
 function downloadVisitorCountCSV() {
-    // Try to get data from localStorage first (most recent)
-    const localData = JSON.parse(localStorage.getItem('csvVisitorCountData') || '[]');
+    const sharedData = JSON.parse(localStorage.getItem('jkCampaignSharedData') || '{"visits": []}');
     
-    if (localData.length > 0) {
-        generateVisitorCSVDownload(localData);
-    } else {
-        // Fallback to reading the CSV file
-        readVisitorCSVFile().then(data => {
-            if (data.length === 0) {
-                alert('No visitor count data available');
-                return;
-            }
-            generateVisitorCSVDownload(data);
-        });
+    if (sharedData.visits.length === 0) {
+        alert('No visitor count data available');
+        return;
     }
+    
+    generateVisitorCSVDownload(sharedData.visits);
 }
+
+// Admin function to manually download CSV (for IP data)
+window.downloadVisitorCSV = function() {
+    const ipData = JSON.parse(localStorage.getItem('jkCampaignIPData') || '[]');
+    
+    if (ipData.length === 0) {
+        alert('No IP data available');
+        return;
+    }
+    
+    generateCSVDownloadFromData(ipData);
+};
 
 // Function to generate visitor CSV download
 function generateVisitorCSVDownload(visitorData) {
@@ -285,7 +322,7 @@ async function updateUniqueIPCountFromCSV() {
 </div>
 
 <script>
-// Simple visitor counter using CSV file
+// Simple visitor counter using shared simulation approach
 async function updateVisitorCount() {
     try {
         // Get current timestamp and detailed time info
@@ -297,11 +334,17 @@ async function updateVisitorCount() {
         const minute = now.getMinutes().toString().padStart(2, '0');
         const second = now.getSeconds().toString().padStart(2, '0');
         
-        // Read existing visitor data
-        const existingVisitors = await readVisitorCSVFile();
+        // Use a combination of localStorage and URL hash to share data
+        const sharedKey = 'jkCampaignSharedData';
+        let sharedData = JSON.parse(localStorage.getItem(sharedKey) || '{"visits": [], "lastVisit": 0}');
         
-        // Calculate new visit count
-        const visitCount = existingVisitors.length + 1;
+        // Simulate getting data from multiple sources
+        const urlParams = new URLSearchParams(window.location.search);
+        const simulatedVisits = parseInt(urlParams.get('visits')) || 0;
+        
+        // Calculate visit count (use the higher of stored or simulated)
+        const localVisitCount = sharedData.visits.length;
+        const totalVisits = Math.max(localVisitCount, simulatedVisits) + 1;
         
         // Create new visitor entry
         const visitorEntry = {
@@ -311,29 +354,40 @@ async function updateVisitorCount() {
             hour: hour,
             minute: minute,
             second: second,
-            visitCount: visitCount,
-            userAgent: navigator.userAgent,
-            pageUrl: window.location.href
+            visitCount: totalVisits,
+            userAgent: navigator.userAgent.substring(0, 50) + '...', // Truncate for storage
+            pageUrl: window.location.href.split('?')[0], // Remove query params
+            sessionId: generateSessionId()
         };
         
-        // Append to visitors CSV
-        await appendToVisitorCSVFile(visitorEntry);
+        // Add to shared data
+        sharedData.visits.push(visitorEntry);
+        sharedData.lastVisit = Date.now();
+        
+        // Keep only last 50 entries to prevent storage overflow
+        if (sharedData.visits.length > 50) {
+            sharedData.visits = sharedData.visits.slice(-50);
+        }
+        
+        // Store updated data
+        localStorage.setItem(sharedKey, JSON.stringify(sharedData));
         
         // Display the count
-        document.getElementById('visitorCount').textContent = visitCount.toLocaleString();
+        document.getElementById('visitorCount').textContent = totalVisits.toLocaleString();
         
         console.log('Visitor count updated:', visitorEntry);
+        
+        // Try to simulate cross-browser sharing via URL manipulation
+        if (window.history && window.history.replaceState) {
+            const newUrl = window.location.pathname + '?visits=' + totalVisits + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+        }
         
     } catch (error) {
         console.log('Error updating visitor count:', error.message);
         
-        // Fallback to localStorage method
-        let visits = localStorage.getItem('jkCampaignVisits');
-        if (visits === null) {
-            visits = 0;
-        } else {
-            visits = parseInt(visits);
-        }
+        // Ultimate fallback to simple localStorage
+        let visits = parseInt(localStorage.getItem('jkCampaignVisits') || '0');
         visits++;
         localStorage.setItem('jkCampaignVisits', visits);
         document.getElementById('visitorCount').textContent = visits.toLocaleString();
@@ -348,20 +402,22 @@ async function trackVisitorIP() {
         const data = await response.json();
         
         if (data.ip) {
-            // Read existing CSV data
-            const existingData = await readCSVFile();
+            // Use shared storage key
+            const sharedIPKey = 'jkCampaignIPData';
+            let ipData = JSON.parse(localStorage.getItem(sharedIPKey) || '[]');
             
-            // Check if this specific IP was already tracked recently (within last 10 minutes)
-            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-            const recentSameIP = existingData.find(visitor => 
-                visitor.ip === data.ip && new Date(visitor.timestamp) > tenMinutesAgo
+            // Check if this specific IP was already tracked recently (within last 2 minutes for testing)
+            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+            const recentSameIP = ipData.find(visitor => 
+                visitor.ip === data.ip && new Date(visitor.timestamp) > twoMinutesAgo
             );
             
             if (recentSameIP) {
-                console.log('Same IP tracked within last 10 minutes, skipping to avoid spam');
+                console.log('Same IP tracked within last 2 minutes, skipping to avoid spam');
                 // Still update the IP count display even if not tracking
                 if (window.location.search.includes('admin=true')) {
-                    updateUniqueIPCountFromCSV();
+                    updateUniqueIPCountFromSharedData();
+                    updateTotalVisitsFromSharedData();
                 }
                 return;
             }
@@ -376,20 +432,27 @@ async function trackVisitorIP() {
                 countryCode: data.country_code || 'Unknown',
                 timezone: data.timezone || 'Unknown',
                 isp: data.org || 'Unknown',
-                userAgent: navigator.userAgent,
+                userAgent: navigator.userAgent.substring(0, 50) + '...', // Truncate
                 referrer: document.referrer || 'Direct',
-                pageUrl: window.location.href,
+                pageUrl: window.location.href.split('?')[0], // Remove query params
                 sessionId: generateSessionId()
             };
             
-            // Append to CSV file
-            await appendToCSVFile(visitorInfo);
+            // Add to shared IP data
+            ipData.push(visitorInfo);
             
-            console.log('New visitor tracked to CSV:', visitorInfo);
-              // Update unique IP count if admin panel is visible
+            // Keep only last 100 entries to prevent localStorage overflow
+            if (ipData.length > 100) {
+                ipData = ipData.slice(-100);
+            }
+            
+            localStorage.setItem(sharedIPKey, JSON.stringify(ipData));
+            
+            console.log('New visitor IP tracked:', visitorInfo);            
+            // Update counts if admin panel is visible
             if (window.location.search.includes('admin=true')) {
-                updateUniqueIPCountFromCSV();
-                updateTotalVisitsCount();
+                updateUniqueIPCountFromSharedData();
+                updateTotalVisitsFromSharedData();
             }
         }
     } catch (error) {
@@ -648,30 +711,35 @@ async function addTestIP() {
         isp: 'Test ISP',
         userAgent: 'Test Browser - ' + navigator.userAgent.split(' ')[0],
         referrer: 'Manual Test Entry',
-        pageUrl: window.location.href,
+        pageUrl: window.location.href.split('?')[0],
         sessionId: generateSessionId()
     };
     
-    // Add to CSV data
-    await appendToCSVFile(testVisitorInfo);
+    // Add to shared IP data
+    const ipData = JSON.parse(localStorage.getItem('jkCampaignIPData') || '[]');
+    ipData.push(testVisitorInfo);
+    localStorage.setItem('jkCampaignIPData', JSON.stringify(ipData));
     
     // Update display
-    updateUniqueIPCountFromCSV();
+    updateUniqueIPCountFromSharedData();
+    updateTotalVisitsFromSharedData();
     document.getElementById('testIP').value = '';
     
-    console.log('Test IP added to CSV:', testVisitorInfo);
-    alert(`Test IP ${testIP} added successfully to CSV!`);
+    console.log('Test IP added:', testVisitorInfo);
+    alert(`Test IP ${testIP} added successfully!`);
 }
 
 // Function to clear all visitor data
 function clearAllData() {
     if (confirm('Are you sure you want to clear all visitor and IP data?')) {
-        localStorage.removeItem('csvVisitorData'); // IP data
-        localStorage.removeItem('csvVisitorCountData'); // Visitor count data
-        localStorage.removeItem('visitorTrackingData'); // Clear old data too
-        localStorage.removeItem('jkCampaignVisits'); // Clear old visit count
-        updateUniqueIPCountFromCSV();
-        updateTotalVisitsCount();
+        localStorage.removeItem('jkCampaignIPData'); // IP data
+        localStorage.removeItem('jkCampaignSharedData'); // Visitor count data
+        localStorage.removeItem('csvVisitorData'); // Old CSV data
+        localStorage.removeItem('csvVisitorCountData'); // Old visitor count data
+        localStorage.removeItem('visitorTrackingData'); // Old tracking data
+        localStorage.removeItem('jkCampaignVisits'); // Old visit count
+        updateUniqueIPCountFromSharedData();
+        updateTotalVisitsFromSharedData();
         alert('All visitor data cleared!');
     }
 }
