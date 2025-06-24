@@ -128,6 +128,7 @@
 <div id="adminPanel" style="display: none; margin-top: 10px; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 3px;">
     <p style="margin: 0; font-size: 12px; color: #856404;">
         <strong>Admin Mode:</strong> IP tracking active | 
+        <span id="uniqueIPCount">Unique IPs: 0</span> | 
         <button onclick="downloadVisitorCSV()" style="background: #007bff; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px;">
             📊 Download CSV
         </button>
@@ -140,7 +141,18 @@
 if (window.location.search.includes('admin=true')) {
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('adminPanel').style.display = 'block';
+        updateUniqueIPCount();
     });
+}
+
+// Function to update unique IP count in admin panel
+function updateUniqueIPCount() {
+    const visitorData = JSON.parse(localStorage.getItem('visitorTrackingData') || '[]');
+    const uniqueIPs = [...new Set(visitorData.map(visitor => visitor.ip))];
+    const countElement = document.getElementById('uniqueIPCount');
+    if (countElement) {
+        countElement.textContent = `Unique IPs: ${uniqueIPs.length}`;
+    }
 }
 </script>
 
@@ -172,20 +184,23 @@ function updateVisitorCount() {
 // IP Geolocation tracking function
 async function trackVisitorIP() {
     try {
-        // Check if this IP was already tracked today
-        const today = new Date().toDateString();
-        const lastTracked = localStorage.getItem('lastIPTracked');
-        
-        if (lastTracked === today) {
-            console.log('IP already tracked today');
-            return;
-        }
-        
         // Get IP and location info from ipapi.co (free tier: 1000 requests/day)
         const response = await fetch('https://ipapi.co/json/');
         const data = await response.json();
         
         if (data.ip) {
+            // Check if this specific IP was already tracked recently (within last hour to avoid spam)
+            const visitorData = JSON.parse(localStorage.getItem('visitorTrackingData') || '[]');
+            const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+            const recentSameIP = visitorData.find(visitor => 
+                visitor.ip === data.ip && new Date(visitor.timestamp) > oneHourAgo
+            );
+            
+            if (recentSameIP) {
+                console.log('Same IP tracked within last hour, skipping to avoid spam');
+                return;
+            }
+            
             // Create visitor info object
             const visitorInfo = {
                 timestamp: new Date().toISOString(),
@@ -202,18 +217,20 @@ async function trackVisitorIP() {
             };
             
             // Store visitor info in localStorage
-            let visitorData = JSON.parse(localStorage.getItem('visitorTrackingData') || '[]');
-            visitorData.push(visitorInfo);
+            let updatedVisitorData = [...visitorData, visitorInfo];
             
-            // Keep only last 100 entries to prevent localStorage overflow
-            if (visitorData.length > 100) {
-                visitorData = visitorData.slice(-100);
+            // Keep only last 200 entries to prevent localStorage overflow
+            if (updatedVisitorData.length > 200) {
+                updatedVisitorData = updatedVisitorData.slice(-200);
             }
+              localStorage.setItem('visitorTrackingData', JSON.stringify(updatedVisitorData));
             
-            localStorage.setItem('visitorTrackingData', JSON.stringify(visitorData));
-            localStorage.setItem('lastIPTracked', today);
+            console.log('New visitor tracked:', visitorInfo);
             
-            console.log('Visitor tracked:', visitorInfo);
+            // Update unique IP count if admin panel is visible
+            if (window.location.search.includes('admin=true')) {
+                updateUniqueIPCount();
+            }
             
             // Auto-generate CSV file for admin (only in development/admin mode)
             if (window.location.search.includes('admin=true')) {
