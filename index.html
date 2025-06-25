@@ -322,76 +322,46 @@ async function updateUniqueIPCountFromCSV() {
 </div>
 
 <script>
-// Simple visitor counter using shared simulation approach
-async function updateVisitorCount() {
-    try {
-        // Get current timestamp and detailed time info
-        const now = new Date();
-        const timestamp = now.toISOString();
-        const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
-        const time = now.toTimeString().split(' ')[0]; // HH:MM:SS
-        const hour = now.getHours().toString().padStart(2, '0');
-        const minute = now.getMinutes().toString().padStart(2, '0');
-        const second = now.getSeconds().toString().padStart(2, '0');
-        
-        // Use a combination of localStorage and URL hash to share data
-        const sharedKey = 'jkCampaignSharedData';
-        let sharedData = JSON.parse(localStorage.getItem(sharedKey) || '{"visits": [], "lastVisit": 0}');
-        
-        // Simulate getting data from multiple sources
-        const urlParams = new URLSearchParams(window.location.search);
-        const simulatedVisits = parseInt(urlParams.get('visits')) || 0;
-        
-        // Calculate visit count (use the higher of stored or simulated)
-        const localVisitCount = sharedData.visits.length;
-        const totalVisits = Math.max(localVisitCount, simulatedVisits) + 1;
-        
-        // Create new visitor entry
-        const visitorEntry = {
-            timestamp: timestamp,
-            date: date,
-            time: time,
-            hour: hour,
-            minute: minute,
-            second: second,
-            visitCount: totalVisits,
-            userAgent: navigator.userAgent.substring(0, 50) + '...', // Truncate for storage
-            pageUrl: window.location.href.split('?')[0], // Remove query params
-            sessionId: generateSessionId()
-        };
-        
-        // Add to shared data
-        sharedData.visits.push(visitorEntry);
-        sharedData.lastVisit = Date.now();
-        
-        // Keep only last 50 entries to prevent storage overflow
-        if (sharedData.visits.length > 50) {
-            sharedData.visits = sharedData.visits.slice(-50);
-        }
-        
-        // Store updated data
-        localStorage.setItem(sharedKey, JSON.stringify(sharedData));
-        
-        // Display the count
-        document.getElementById('visitorCount').textContent = totalVisits.toLocaleString();
-        
-        console.log('Visitor count updated:', visitorEntry);
-        
-        // Try to simulate cross-browser sharing via URL manipulation
-        if (window.history && window.history.replaceState) {
-            const newUrl = window.location.pathname + '?visits=' + totalVisits + window.location.hash;
-            window.history.replaceState({}, '', newUrl);
-        }
-        
-    } catch (error) {
-        console.log('Error updating visitor count:', error.message);
-        
-        // Ultimate fallback to simple localStorage
-        let visits = parseInt(localStorage.getItem('jkCampaignVisits') || '0');
-        visits++;
-        localStorage.setItem('jkCampaignVisits', visits);
-        document.getElementById('visitorCount').textContent = visits.toLocaleString();
+// Simple visitor counter using vanilla JS and localStorage
+function updateVisitorCount() {
+    // Get current count from localStorage
+    let visits = parseInt(localStorage.getItem('jkCampaignVisits') || '0');
+    
+    // Increment visit count
+    visits++;
+    
+    // Store updated count
+    localStorage.setItem('jkCampaignVisits', visits);
+    
+    // Display the count
+    document.getElementById('visitorCount').textContent = visits.toLocaleString();
+    
+    // Also store visit details
+    const now = new Date();
+    const visitData = {
+        timestamp: now.toISOString(),
+        date: now.toISOString().split('T')[0],
+        time: now.toTimeString().split(' ')[0],
+        hour: now.getHours().toString().padStart(2, '0'),
+        minute: now.getMinutes().toString().padStart(2, '0'),
+        second: now.getSeconds().toString().padStart(2, '0'),
+        visitCount: visits,
+        userAgent: navigator.userAgent.substring(0, 50) + '...',
+        pageUrl: window.location.href.split('?')[0]
+    };
+    
+    // Store visit details
+    const visitHistory = JSON.parse(localStorage.getItem('jkVisitHistory') || '[]');
+    visitHistory.push(visitData);
+    
+    // Keep only last 100 visits
+    if (visitHistory.length > 100) {
+        visitHistory.splice(0, visitHistory.length - 100);
     }
+    
+    localStorage.setItem('jkVisitHistory', JSON.stringify(visitHistory));
+    
+    console.log('Visit recorded:', visitData);
 }
 
 // IP Geolocation tracking function
