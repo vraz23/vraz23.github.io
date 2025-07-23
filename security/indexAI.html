@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>.NET 9 & AI Security Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Tech Horizon -->
+    <!-- Application Structure Plan: The application is designed as a thematic, single-page dashboard rather than a linear chapter-by-chapter summary. This non-linear structure enhances usability by allowing users to explore content based on their interests and roles (e.g., developer, security analyst). The flow starts with a high-level introduction, moves to core concepts (like the AI Duality), visualizes the AI-powered DevSecOps lifecycle, presents a filterable dashboard of AI security applications, compares implementation models (Local vs. Cloud), and concludes with adversarial risks and future trends. This architecture promotes synthesis and exploration over passive reading, making the complex relationships between .NET, AI, and security more intuitive and digestible. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: .NET 9 Features (Ch 1) -> Goal: Inform -> Viz: Interactive Cards -> Interaction: Click to reveal details -> Justification: Breaks down dense lists into digestible, on-demand snippets. -> Library/Method: HTML/CSS/JS.
+        - Report Info: Traditional SAST vs. LLM Scanning (Ch 3) -> Goal: Compare -> Viz: Bar Chart -> Interaction: Hover for tooltips with accuracy data. -> Justification: Provides a clear, quantitative comparison of tool effectiveness. -> Library/Method: Chart.js/Canvas.
+        - Report Info: DevSecOps Lifecycle (Ch 3, 8, 10) -> Goal: Organize/Show Process -> Viz: HTML/CSS Diagram -> Interaction: Click on stages to display relevant content. -> Justification: Intuitively visualizes how AI integrates into the development workflow. -> Library/Method: HTML/CSS/JS.
+        - Report Info: AI Security Applications (Ch 4-7) -> Goal: Explore/Filter -> Viz: Filterable Card Dashboard -> Interaction: Click filter buttons to show/hide relevant application cards. -> Justification: Allows users to focus on specific areas of interest (e.g., only "Detection" tools). -> Library/Method: HTML/CSS/JS.
+        - Report Info: Adversarial Attacks vs. Defenses (Ch 11) -> Goal: Relate -> Viz: Interactive Grid -> Interaction: Click an attack to see its corresponding defense. -> Justification: Creates a direct, memorable link between threats and mitigations. -> Library/Method: HTML/CSS/JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        /*
+         * © 2025 John Kocer | SmartAI. All Rights Reserved.
+         * https://johnkocer.github.io
+         * Version: 1.0.0 Date: 05-21-2025
+         */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4;
+            color: #2c3e50;
+        }
+        .nav-link {
+            transition: color 0.3s ease, border-bottom-color 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.75rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .lifecycle-stage {
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .lifecycle-stage.active, .lifecycle-stage:hover {
+            background-color: #3498db;
+            color: white;
+        }
+        .filter-btn {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .filter-btn.active {
+            background-color: #2c3e50;
+            color: white;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="https://www.amazon.com/dp/B0F7KNF7TH" target="_blank" class="flex-shrink-0">
+                    <img src="https://m.media-amazon.com/images/I/81S5OixiQ7L._AC_UY327_FMwebp_QL65_.jpg" 
+                         alt=".NET Core 9 Advanced Security Book Cover" 
+                         class="w-40 h-70 rounded-md shadow-lg hover:shadow-xl transition-shadow duration-300">
+                </a>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800">.NET 9 AI Security</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#concepts" class="nav-link pb-1">Core Concepts</a>
+                <a href="#lifecycle" class="nav-link pb-1">Lifecycle</a>
+                <a href="#applications" class="nav-link pb-1">Applications</a>
+                <a href="#risks" class="nav-link pb-1">Risks</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-gray-700 focus:outline-none">
+                <span class="block w-6 h-0.5 bg-current"></span>
+                <span class="block w-6 h-0.5 bg-current mt-1.5"></span>
+                <span class="block w-6 h-0.5 bg-current mt-1.5"></span>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4">
+            <a href="#concepts" class="block py-2 nav-link">Core Concepts</a>
+            <a href="#lifecycle" class="block py-2 nav-link">Lifecycle</a>
+            <a href="#applications" class="block py-2 nav-link">Applications</a>
+            <a href="#risks" class="block py-2 nav-link">Risks</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        
+        <section id="hero" class="text-center mb-20">
+            <h2 class="text-4xl md:text-5xl font-bold mb-4">Secure by Design with AI-Augmented Development</h2>
+            <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                This guide explores the convergence of .NET 9's new security features and the transformative power of AI. Discover how to build proactive, intelligent defenses, moving beyond traditional security to create applications that are secure by design.
+            </p>
+            <div class="mt-6">
+                <a href="https://www.amazon.com/dp/B0F7KNF7TH" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-lg hover:shadow-xl">
+                    📚 Get the Book: ASP.NET Core 9 Advanced Security
+                </a>
+            </div>
+        </section>
+
+        <section id="concepts" class="mb-20">
+            <h3 class="text-3xl font-bold text-center mb-2">Core Concepts</h3>
+            <p class="text-center text-gray-600 mb-12">Understand the foundational pillars of modern .NET security.</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <div id="net9-card" class="card p-6 cursor-pointer">
+                    <h4 class="text-xl font-semibold mb-2">.NET 9 Foundational Security</h4>
+                    <p class="text-gray-600">.NET 9 introduces significant platform-level enhancements to create a "secure by default" environment. Click to see key features.</p>
+                </div>
+
+                <div id="ai-duality-card" class="card p-6 cursor-pointer">
+                    <h4 class="text-xl font-semibold mb-2">The Duality of AI</h4>
+                    <p class="text-gray-600">AI is a powerful defender but also creates new attack surfaces. Explore both sides of the coin. Click to learn more.</p>
+                </div>
+
+                <div id="proactive-card" class="card p-6 cursor-pointer">
+                    <h4 class="text-xl font-semibold mb-2">The Proactive Shift</h4>
+                    <p class="text-gray-600">Move from reacting to incidents to predicting and preventing them. See how AI enables this paradigm shift.</p>
+                </div>
+            </div>
+            <div id="concepts-details" class="mt-8 p-6 bg-white rounded-lg border border-gray-200 hidden"></div>
+        </section>
+
+        <section id="lifecycle" class="mb-20">
+            <h3 class="text-3xl font-bold text-center mb-2">The AI-Powered DevSecOps Lifecycle</h3>
+            <p class="text-center text-gray-600 mb-12">Discover how AI integrates security into every stage of development, shifting security "left". Click each stage for details.</p>
+            <div class="flex flex-col md:flex-row justify-center items-center gap-0 md:gap-4 mb-8">
+                <div class="lifecycle-stage p-4 rounded-full border-2 border-gray-300 w-32 h-32 flex items-center justify-center text-center font-semibold" data-stage="code">Code</div>
+                <div class="text-2xl text-gray-400 mx-4 hidden md:block">&rarr;</div>
+                <div class="text-2xl text-gray-400 my-2 md:hidden">&darr;</div>
+                <div class="lifecycle-stage p-4 rounded-full border-2 border-gray-300 w-32 h-32 flex items-center justify-center text-center font-semibold" data-stage="build">Build</div>
+                <div class="text-2xl text-gray-400 mx-4 hidden md:block">&rarr;</div>
+                <div class="text-2xl text-gray-400 my-2 md:hidden">&darr;</div>
+                <div class="lifecycle-stage p-4 rounded-full border-2 border-gray-300 w-32 h-32 flex items-center justify-center text-center font-semibold" data-stage="monitor">Monitor</div>
+            </div>
+            <div id="lifecycle-details" class="p-6 bg-white rounded-lg border border-gray-200 hidden"></div>
+        </section>
+
+        <section id="applications" class="mb-20">
+            <h3 class="text-3xl font-bold text-center mb-2">AI Security Applications Dashboard</h3>
+            <p class="text-center text-gray-600 mb-8">Explore how AI is applied to solve specific security challenges. Use the filters to navigate.</p>
+            <div class="flex justify-center space-x-2 md:space-x-4 mb-12">
+                <button class="filter-btn active px-4 py-2 rounded-full border border-gray-300" data-filter="all">All</button>
+                <button class="filter-btn px-4 py-2 rounded-full border border-gray-300" data-filter="detection">Detection</button>
+                <button class="filter-btn px-4 py-2 rounded-full border border-gray-300" data-filter="prevention">Prevention</button>
+                <button class="filter-btn px-4 py-2 rounded-full border border-gray-300" data-filter="prediction">Prediction</button>
+            </div>
+            <div id="apps-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </section>
+
+        <section id="comparison" class="mb-20">
+            <h3 class="text-3xl font-bold text-center mb-12">LLM-Based vs. Traditional Vulnerability Scanning</h3>
+            <div class="bg-white p-6 md:p-8 rounded-lg border border-gray-200">
+                <p class="text-center text-gray-600 mb-8">Recent studies show that Large Language Models (LLMs) like GPT-4 can outperform traditional Static Application Security Testing (SAST) tools in identifying complex vulnerabilities due to their deep contextual understanding of code.</p>
+                <div class="chart-container">
+                    <canvas id="sast-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="risks" class="mb-20">
+            <h3 class="text-3xl font-bold text-center mb-2">Adversarial AI: Understanding the Risks</h3>
+            <p class="text-center text-gray-600 mb-12">While powerful, AI models introduce new vulnerabilities. Click on an attack vector to see its description and common defenses.</p>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div id="attack-vectors" class="flex flex-col space-y-4">
+                </div>
+                <div id="defense-details" class="p-6 bg-white rounded-lg border border-gray-200">
+                    <p class="text-gray-500">Select an attack vector to see details.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>Interactive Guide based on the book outline: ".NET Core 9 Advanced Security: Secure by Design with AI-Augmented Development".</p>
+            <p class="text-sm text-gray-400 mt-2">This is a conceptual web application for information exploration.</p>
+            <p class="text-sm text-gray-400 mt-2">© 2025 John Kocer | SmartAI. All Rights Reserved.</p>
+            
+            <!-- Book Cover in Footer -->
+            <div class="flex justify-center mt-6">
+                <a href="https://www.amazon.com/dp/B0F7KNF7TH" target="_blank" class="block">
+                    <img src="https://m.media-amazon.com/images/I/81S5OixiQ7L._AC_UY327_FMwebp_QL65_.jpg" 
+                         alt=".NET Core 9 Advanced Security Book Cover" 
+                         class="w-40 h-70 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+
+            const conceptsData = {
+                net9: {
+                    title: 'Key .NET 9 Security Enhancements',
+                    content: `<ul>
+                        <li class="mb-2"><strong>Transitive Dependency Scanning:</strong> Automatically finds vulnerabilities deep in your package tree.</li>
+                        <li class="mb-2"><strong>Strengthened Cryptography:</strong> Updated libraries and new algorithms like KMAC for robust encryption.</li>
+                        <li class="mb-2"><strong>Pushed Authorization Requests (PAR):</strong> Enhances OAuth/OIDC security by moving sensitive parameters to a secure back-channel.</li>
+                        <li class="mb-2"><strong>ASP0026 Analyzer:</strong> Warns developers when an [Authorize] attribute is unintentionally overridden by [AllowAnonymous].</li>
+                    </ul>`
+                },
+                aiDuality: {
+                    title: 'The Duality of AI: Defender vs. Attack Surface',
+                    content: `<p><strong>As a Defender:</strong> AI analyzes vast datasets to detect anomalies, predict threats, and automate responses at machine speed, far surpassing human capabilities.</p>
+                             <p class="mt-4"><strong>As an Attack Surface:</strong> AI models themselves can be attacked. Adversaries use techniques like Data Poisoning to corrupt training data or Prompt Injection to manipulate model outputs, creating a new front in cybersecurity.</p>`
+                },
+                proactive: {
+                    title: 'The Shift to Proactive, Predictive Security',
+                    content: `<p><strong>Reactive (Traditional):</strong> Wait for an alert, investigate the breach, patch the system, and recover. This approach is always a step behind the attacker.</p>
+                             <p class="mt-4"><strong>Proactive (AI-Powered):</strong> Analyze threat intelligence and historical data to forecast future attacks. AI models predict which vulnerabilities are likely to be exploited, allowing teams to prioritize defenses and patch *before* an incident occurs.</p>`
+                }
+            };
+            const conceptsDetails = document.getElementById('concepts-details');
+            document.getElementById('net9-card').addEventListener('click', () => showConceptDetails('net9'));
+            document.getElementById('ai-duality-card').addEventListener('click', () => showConceptDetails('aiDuality'));
+            document.getElementById('proactive-card').addEventListener('click', () => showConceptDetails('proactive'));
+
+            function showConceptDetails(key) {
+                const data = conceptsData[key];
+                conceptsDetails.innerHTML = `<h4 class="text-xl font-semibold mb-4">${data.title}</h4><div>${data.content}</div>`;
+                conceptsDetails.classList.remove('hidden');
+            }
+
+            const lifecycleData = {
+                code: {
+                    title: 'Stage 1: Code',
+                    content: `AI integrates directly into the developer's IDE. Tools like <strong>GitHub Copilot</strong> and <strong>Visual Studio IntelliCode</strong> provide real-time, context-aware code suggestions that adhere to secure practices. AI-powered SAST scans code as it's written, identifying potential flaws and offering remediation advice instantly, making developers the first line of defense.`
+                },
+                build: {
+                    title: 'Stage 2: Build & Test',
+                    content: `In the CI/CD pipeline, AI automates critical security checks. It performs <strong>automated dependency audits</strong> to find vulnerabilities in NuGet packages and third-party libraries. AI-driven <strong>container scans</strong> inspect images for OS-level CVEs and misconfigurations, ensuring that only secure artifacts proceed to deployment.`
+                },
+                monitor: {
+                    title: 'Stage 3: Monitor',
+                    content: `Post-deployment, AI enhances observability. Combined with frameworks like <strong>.NET Aspire</strong>, which standardizes telemetry data, AI sifts through logs and metrics to perform <strong>intelligent anomaly detection</strong>. It learns the "normal" behavior of the application and alerts on meaningful deviations, reducing alert fatigue and enabling rapid incident response.`
+                }
+            };
+            const lifecycleDetails = document.getElementById('lifecycle-details');
+            const lifecycleStages = document.querySelectorAll('.lifecycle-stage');
+            lifecycleStages.forEach(stage => {
+                stage.addEventListener('click', () => {
+                    lifecycleStages.forEach(s => s.classList.remove('active'));
+                    stage.classList.add('active');
+                    const stageKey = stage.dataset.stage;
+                    const data = lifecycleData[stageKey];
+                    lifecycleDetails.innerHTML = `<h4 class="text-xl font-semibold mb-4">${data.title}</h4><p>${data.content}</p>`;
+                    lifecycleDetails.classList.remove('hidden');
+                });
+            });
+
+            const appsData = [
+                { id: 1, title: 'Log Anomaly Detection', category: 'detection', description: 'Uses ML.NET to analyze application logs and telemetry in real-time, identifying unusual patterns like traffic spikes or error rates that could signal an attack or failure.' },
+                { id: 2, title: 'User Behavior Analytics', category: 'detection', description: 'Profiles normal user activity and flags deviations. Essential for detecting insider threats or compromised accounts based on anomalous access patterns or login locations.' },
+                { id: 3, title: 'Network Intrusion Detection', category: 'detection', description: 'Applies machine learning to network traffic data to identify suspicious patterns, outperforming traditional signature-based IDS for detecting zero-day exploits.' },
+                { id: 4, title: 'Advanced Malware Detection', category: 'detection', description: 'Utilizes AI to analyze files for malicious behavior (dynamic analysis) or structural red flags (static analysis), effectively catching polymorphic and unknown malware.' },
+                { id: 5, title: 'Vulnerability Forecasting', category: 'prediction', description: 'Builds predictive ML models on threat intelligence feeds and historical data to forecast which vulnerabilities are most likely to be targeted next.' },
+                { id: 6, title: 'Risk Prioritization', category: 'prediction', description: 'AI assigns risk scores to vulnerabilities based on context, such as active exploitation in the wild, helping teams prioritize patching and defense efforts effectively.' },
+                { id: 7, title: 'Intelligent Authentication', category: 'prevention', description: 'Leverages AI to analyze login patterns and token usage. Can detect replayed JWTs, anomalous login locations, and other signs of credential abuse.' },
+                { id: 8, title: 'Automated Code Review', category: 'prevention', description: 'Cloud AI services automatically review code for security flaws, adherence to standards, or even for protected/copyrighted material before it gets committed.' },
+            ];
+            const appsGrid = document.getElementById('apps-grid');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+
+            function renderApps(filter = 'all') {
+                appsGrid.innerHTML = '';
+                const filteredApps = filter === 'all' ? appsData : appsData.filter(app => app.category === filter);
+                filteredApps.forEach(app => {
+                    const card = document.createElement('div');
+                    card.className = 'card p-6';
+                    card.innerHTML = `
+                        <h4 class="text-xl font-semibold mb-2">${app.title}</h4>
+                        <p class="text-gray-600">${app.description}</p>
+                        <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mt-4 px-2.5 py-0.5 rounded-full">${app.category.charAt(0).toUpperCase() + app.category.slice(1)}</span>
+                    `;
+                    appsGrid.appendChild(card);
+                });
+            }
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderApps(btn.dataset.filter);
+                });
+            });
+
+            renderApps();
+            
+            const sastCtx = document.getElementById('sast-chart').getContext('2d');
+            new Chart(sastCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Traditional SAST', 'LLM-Based Scanning (GPT-4)'],
+                    datasets: [{
+                        label: 'Vulnerability Detection Accuracy',
+                        data: [72, 94],
+                        backgroundColor: [
+                            'rgba(255, 159, 64, 0.6)',
+                            'rgba(54, 162, 235, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 159, 64, 1)',
+                            'rgba(54, 162, 235, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Accuracy: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const attackData = [
+                { name: 'Evasion Attacks', description: 'Subtle, often imperceptible changes to input data (e.g., a network packet) that trick an AI model into making an incorrect classification, allowing malicious content to pass as benign.', defense: '<strong>Adversarial Training:</strong> Explicitly train the model on examples of adversarial inputs to make it more resilient. Also, apply strict input validation to reject malformed data.' },
+                { name: 'Data Poisoning', description: 'Corrupting the model\'s training data with malicious samples. This can create backdoors or cause the model to systematically misclassify certain types of data in production.', defense: '<strong>Robust Data Governance & Anomaly Sensors:</strong> Use curated, high-quality datasets. Apply anomaly detection to the training data itself to identify and remove suspicious or outlier samples before training.' },
+                { name: 'Model Stealing', description: 'Querying a model\'s API extensively to reverse-engineer its behavior or steal the model itself. This can lead to intellectual property theft and privacy breaches.', defense: '<strong>Rate Limiting & Watermarking:</strong> Implement strict API rate limits to slow down extraction attempts. Model watermarking can help identify stolen models if they are found elsewhere.' },
+                { name: 'Prompt Injection', description: 'Injecting malicious instructions into the prompts given to an LLM, causing it to bypass its safety controls, leak sensitive data, or perform unauthorized actions.', defense: '<strong>Input Sanitization & Secure Prompts:</strong> Rigorously sanitize all user-provided input. Use system-level prompts that instruct the model to ignore attempts to override its core instructions.' }
+            ];
+
+            const attackVectorsContainer = document.getElementById('attack-vectors');
+            const defenseDetailsContainer = document.getElementById('defense-details');
+
+            attackData.forEach((attack, index) => {
+                const attackEl = document.createElement('div');
+                attackEl.className = 'card p-4 cursor-pointer';
+                attackEl.textContent = attack.name;
+                attackEl.dataset.index = index;
+                attackEl.addEventListener('click', (e) => {
+                    document.querySelectorAll('#attack-vectors .card').forEach(c => c.classList.remove('bg-blue-100'));
+                    e.target.classList.add('bg-blue-100');
+                    const selectedAttack = attackData[e.target.dataset.index];
+                    defenseDetailsContainer.innerHTML = `
+                        <h4 class="text-xl font-semibold mb-2">${selectedAttack.name}</h4>
+                        <p class="text-gray-600 mb-4"><strong>Threat:</strong> ${selectedAttack.description}</p>
+                        <hr class="my-4">
+                        <p class="text-gray-800"><strong>Primary Defense:</strong> ${selectedAttack.defense}</p>
+                    `;
+                });
+                attackVectorsContainer.appendChild(attackEl);
+            });
+        });
+    </script>
+</body>
+</html>

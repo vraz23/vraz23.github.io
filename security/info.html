@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>.NET 9 & AI Security Infographic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Brilliant Blues -->
+    <!-- Application Structure Plan: The infographic follows a narrative structure to guide the user from the foundational concepts to advanced applications. It begins with a high-impact hero section stating the core theme: the shift to proactive security. It then flows into ".NET 9's Secure Foundation," using cards to present key features. The centerpiece is "The AI Revolution in Security," which uses a comparison bar chart and a process flow diagram to visualize AI's impact. The narrative continues with "AI in Action," showcasing specific use cases with donut charts and icons. It concludes by addressing "The New Frontier of Risk," covering adversarial AI. This top-down, from-general-to-specific structure makes the complex topic digestible for a broad audience. -->
+    <!-- Visualization & Content Choices: 
+        - Data Point: .NET 9 Security Enhancements (Table 1.1) -> Goal: Organize -> Chosen Visualization: Styled HTML Cards -> Justification: Breaks down a list of technical features into easily scannable, visually distinct units. -> Library/Method: HTML/CSS with Tailwind.
+        - Data Point: SAST vs. LLM Accuracy (Chapter 3.2) -> Goal: Compare -> Chosen Visualization: Bar Chart -> Justification: A bar chart provides the most direct and universally understood way to compare the effectiveness (94% vs. 72%) of two distinct technologies. -> Library/Method: Chart.js/Canvas.
+        - Data Point: DevSecOps Automation (Chapter 10) -> Goal: Organize Process -> Chosen Visualization: HTML/CSS Flowchart -> Justification: A visual flowchart clearly illustrates the integration of AI at each stage of the CI/CD pipeline, reinforcing the "shift-left" concept. -> Library/Method: HTML/CSS with Tailwind, using Unicode arrows.
+        - Data Point: Anomaly Detection (Chapter 4) -> Goal: Inform -> Chosen Visualization: Donut Chart & Big Number -> Justification: A donut chart effectively shows the composition of data (normal vs. anomaly), while a large stat highlights a key performance indicator, making the benefit tangible. -> Library/Method: Chart.js/Canvas & HTML.
+        - Data Point: Adversarial AI Attacks (Chapter 11) -> Goal: Inform/Organize -> Chosen Visualization: Icon-based List -> Justification: Using simple Unicode icons (🎯, 🛡️) next to text makes the list of threats and defenses more engaging and easier to parse than plain text. -> Library/Method: HTML/CSS with Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        /*
+         * © 2025 John Kocer | SmartAI. All Rights Reserved.
+         * https://johnkocer.github.io
+         * Version: 1.0.0 Date: 05-21-2025
+         */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #E6F2FF;
+            color: #004AAD;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        .stat-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/90 backdrop-blur-lg shadow-sm border-b border-blue-100">
+        <div class="container mx-auto px-4 py-8 md:px-8">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center space-y-6 md:space-y-0">
+                <h1 class="text-lg md:text-xl font-bold text-[#004AAD]">.NET 9 & AI Security Infographic</h1>
+                <div class="flex items-center space-x-4 text-sm text-[#0073E6]">
+                    <img src="https://m.media-amazon.com/images/I/81S5OixiQ7L._AC_UY327_FMwebp_QL65_.jpg" 
+                         alt="ASP.NET Core 9 Advanced Security Book Cover" 
+                         class="w-48 h-70 object-cover rounded shadow-lg flex-shrink-0">
+                    <a href="https://www.amazon.com/dp/B0F7KNF7TH" target="_blank" rel="noopener noreferrer" class="hover:underline font-semibold">
+                        📚 Get the Book: ASP.NET Core 9 Advanced Security
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-12 md:px-8 md:py-16">
+
+        <section class="text-center mb-20">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-[#004AAD] mb-4">The Proactive Shift</h1>
+            <p class="text-lg md:text-xl text-[#0073E6] max-w-3xl mx-auto">Moving Beyond Reaction: How .NET 9 and AI are building the future of cybersecurity, one predictive model at a time.</p>
+        </section>
+
+        <section class="mb-20">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-[#004AAD]">.NET 9's Secure Foundation</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="stat-card p-6 border-l-4 border-[#0073E6]">
+                    <h3 class="text-xl font-bold mb-2 text-[#004AAD]">Transitive Dependency Scanning</h3>
+                    <p class="text-gray-600">Automatically finds vulnerabilities deep in your package tree, preventing hidden supply chain attacks.</p>
+                </div>
+                <div class="stat-card p-6 border-l-4 border-[#0073E6]">
+                    <h3 class="text-xl font-bold mb-2 text-[#004AAD]">Pushed Authorization Requests (PAR)</h3>
+                    <p class="text-gray-600">Secures OAuth/OIDC flows by moving sensitive parameters to a secure back-channel, preventing tampering and PII leaks.</p>
+                </div>
+                <div class="stat-card p-6 border-l-4 border-[#0073E6]">
+                    <h3 class="text-xl font-bold mb-2 text-[#004AAD]">ASP0026 Analyzer</h3>
+                    <p class="text-gray-600">Warns developers when an `[Authorize]` attribute is accidentally overridden, preventing unintentional security holes.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-20">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-[#004AAD]">The AI Revolution in Security</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="stat-card p-8">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-[#004AAD]">Smarter Vulnerability Scanning</h3>
+                    <p class="text-center text-gray-600 mb-6">AI's contextual understanding of code allows it to find complex flaws that rule-based tools miss. Studies show LLMs like GPT-4 can significantly outperform traditional static analyzers.</p>
+                    <div class="chart-container">
+                        <canvas id="sastComparisonChart"></canvas>
+                    </div>
+                </div>
+                <div class="stat-card p-8">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-[#004AAD]">AI-Augmented DevSecOps</h3>
+                     <p class="text-center text-gray-600 mb-8">AI embeds security into every stage of the CI/CD pipeline, automating checks and providing real-time feedback to developers.</p>
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-[#B3D9FF] text-[#004AAD] font-bold rounded-full w-16 h-16 flex items-center justify-center text-center">Code</div>
+                            <div class="text-2xl font-bold text-[#66B2FF]">&rarr;</div>
+                            <p class="text-gray-600 flex-1">AI assistants suggest secure code in real-time inside the IDE.</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-[#66B2FF] text-white font-bold rounded-full w-16 h-16 flex items-center justify-center text-center">Build</div>
+                            <div class="text-2xl font-bold text-[#66B2FF]">&rarr;</div>
+                            <p class="text-gray-600 flex-1">Automated dependency audits and container scans catch issues before deployment.</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-[#0073E6] text-white font-bold rounded-full w-16 h-16 flex items-center justify-center text-center">Deploy</div>
+                             <div class="text-2xl font-bold text-[#66B2FF]">&rarr;</div>
+                            <p class="text-gray-600 flex-1">AI monitors for configuration drift and ensures secure deployment settings.</p>
+                        </div>
+                         <div class="flex items-center space-x-4">
+                            <div class="bg-[#004AAD] text-white font-bold rounded-full w-16 h-16 flex items-center justify-center text-center">Monitor</div>
+                             <div class="text-2xl font-bold text-[#66B2FF]">&rarr;</div>
+                            <p class="text-gray-600 flex-1">Intelligent anomaly detection sifts through logs to find real threats.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-20">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-[#004AAD]">AI in Action: Key Use Cases</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="stat-card p-8 text-center">
+                    <h3 class="text-2xl font-bold mb-4 text-[#004AAD]">Anomaly Detection</h3>
+                    <p class="text-gray-600 mb-6">ML.NET learns the "normal" behavior of your application and flags deviations, identifying threats that lack a known signature.</p>
+                    <div class="chart-container h-64 max-h-64">
+                        <canvas id="anomalyDetectionChart"></canvas>
+                    </div>
+                </div>
+                <div class="stat-card p-8 text-center">
+                    <h3 class="text-2xl font-bold mb-4 text-[#004AAD]">Threat Intelligence</h3>
+                    <p class="text-gray-600 mb-6">AI processes vast amounts of unstructured data from threat feeds and reports, extracting actionable Indicators of Compromise (IOCs) in real-time.</p>
+                    <div class="text-7xl font-extrabold text-[#0073E6]">10x</div>
+                    <p class="text-gray-700 font-semibold mt-2">Faster Intelligence Generation</p>
+                    <p class="text-gray-500 text-sm">(Compared to manual analysis)</p>
+                </div>
+                <div class="stat-card p-8 text-center">
+                    <h3 class="text-2xl font-bold mb-4 text-[#004AAD]">Insider Threat Detection</h3>
+                    <p class="text-gray-600 mb-6">User Behavior Analytics (UBA) profiles individual user patterns, detecting anomalous activity even from authorized accounts.</p>
+                    <div class="text-5xl text-[#0073E6] mb-4">👤 &rarr; 🕒 &rarr; 📍</div>
+                    <p class="text-gray-600">Correlates user, time, and location to build a comprehensive risk score.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-[#004AAD]">The New Frontier of Risk: Adversarial AI</h2>
+            <div class="stat-card max-w-4xl mx-auto p-8">
+                <p class="text-center text-gray-600 mb-8">While AI is a powerful defender, the models themselves can be attacked. Securing the AI is as important as securing the application with AI.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <div>
+                        <h4 class="text-lg font-bold text-[#004AAD]">🎯 Data Poisoning</h4>
+                        <p class="text-gray-600">Corrupting training data to create backdoors or teach the model to ignore specific threats.</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-[#0073E6]">🛡️ Defense: Anomaly Sensors</h4>
+                        <p class="text-gray-600">Apply anomaly detection to the training data itself to identify and remove malicious inputs before training.</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-[#004AAD]">🎯 Evasion Attacks</h4>
+                        <p class="text-gray-600">Making tiny, imperceptible changes to input to trick a model into making a wrong decision.</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-[#0073E6]">🛡️ Defense: Adversarial Training</h4>
+                        <p class="text-gray-600">Intentionally train the model on adversarial examples to make it more resilient to manipulation.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="text-center py-8">
+        <p class="text-sm text-[#0073E6]">Infographic based on ".NET Core 9 Advanced Security" by Canvas Infographics.</p>
+        <p class="text-sm text-[#0073E6] mt-2">
+            <a href="https://www.amazon.com/dp/B0F7KNF7TH" target="_blank" rel="noopener noreferrer" class="hover:underline font-semibold">
+                ASP.NET Core 9 Advanced Security: Secure by Design with AI-Augmented Development
+            </a>
+            <br>by John Kocer & Michael Kocer
+        </p>
+        <p class="text-sm text-[#0073E6] mt-2">© 2025 John Kocer | SmartAI. All Rights Reserved.</p>
+        
+        <div class="mt-6 flex justify-center">
+            <a href="https://www.amazon.com/dp/B0F7KNF7TH" target="_blank" rel="noopener noreferrer">
+                <img src="https://m.media-amazon.com/images/I/81S5OixiQ7L._AC_UY327_FMwebp_QL65_.jpg" 
+                     alt="ASP.NET Core 9 Advanced Security Book Cover" 
+                     class="w-32 h-70 object-cover rounded shadow-lg hover:shadow-xl transition-shadow duration-300">
+            </a>
+        </div>
+    </footer>
+
+    <script>
+        function wrapText(text, maxLength) {
+            if (text.length <= maxLength) {
+                return text;
+            }
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = '';
+            for (const word of words) {
+                if ((currentLine + word).length > maxLength) {
+                    lines.push(currentLine.trim());
+                    currentLine = '';
+                }
+                currentLine += word + ' ';
+            }
+            lines.push(currentLine.trim());
+            return lines;
+        }
+
+        const tooltipTitleCallback = function(tooltipItems) {
+            const item = tooltipItems[0];
+            let label = item.chart.data.labels[item.dataIndex];
+            if (Array.isArray(label)) {
+                return label.join(' ');
+            } else {
+                return label;
+            }
+        };
+
+        const sastCtx = document.getElementById('sastComparisonChart').getContext('2d');
+        new Chart(sastCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Traditional SAST', 'LLM-Based Scanning'],
+                datasets: [{
+                    label: 'Vulnerability Detection Accuracy',
+                    data: [72, 94],
+                    backgroundColor: ['#B3D9FF', '#0073E6'],
+                    borderColor: ['#66B2FF', '#004AAD'],
+                    borderWidth: 2,
+                    borderRadius: 5,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { display: false },
+                        ticks: {
+                            font: { weight: 'bold', size: 14 },
+                            color: '#004AAD',
+                            callback: value => value + '%'
+                        }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { weight: 'bold', size: 14 },
+                            color: '#004AAD'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: '#004AAD',
+                        titleFont: { size: 16 },
+                        bodyFont: { size: 14 },
+                        callbacks: {
+                            title: tooltipTitleCallback,
+                            label: context => `${context.dataset.label}: ${context.raw}%`
+                        }
+                    }
+                }
+            }
+        });
+
+        const anomalyCtx = document.getElementById('anomalyDetectionChart').getContext('2d');
+        new Chart(anomalyCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Normal Activity', 'Detected Anomalies'],
+                datasets: [{
+                    data: [99.8, 0.2],
+                    backgroundColor: ['#66B2FF', '#004AAD'],
+                    borderColor: '#E6F2FF',
+                    borderWidth: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#004AAD',
+                            font: { size: 14, weight: '500' }
+                        }
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: '#004AAD',
+                        callbacks: {
+                            title: tooltipTitleCallback,
+                            label: context => `${context.label}: ${context.raw}%`
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
